@@ -9,6 +9,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  *
@@ -21,24 +23,36 @@ public class AegisNfdumpReader {
      */
     public static void main(String[] args) {
         AegisNfdumpReader obj = new AegisNfdumpReader();
+        
+        Date date = new Date();
+        Calendar cal = Calendar.getInstance();
+        int year = cal.get(Calendar.YEAR);
+        int month = cal.get(Calendar.MONTH) + 1;
+        int day = cal.get(Calendar.DAY_OF_MONTH);
 
-        String nfdumppath = "/var/cache/nfdump/2018/03/12/";
+        String nfdumppath = "/var/cache/nfdump/" + year + "/" + String.format("%02d", month) 
+                + "/" + String.format("%02d", day) + "/";
 
+        System.out.println("nfdumppath: " + nfdumppath);  
         String[] getLatestNfdumpCommand = {"/bin/sh", "-c", "cd " + nfdumppath + "&& ls -t | head -n 1"};
-
+        String latestNfdumpFile = obj.executeCommand(getLatestNfdumpCommand);
+        System.out.println("Processing: " + latestNfdumpFile);       
+        
+        
         //in mac oxs
-        String[] readNfdumpCommand = {"nfdump", "-r", nfdumppath + "nfcapd.201803121525", "-o", "fmt:%ts,%te,%td,%pr,%sa,%sp,%da,%dp,%pkt,%byt,%bps,%pps", "-O", "tstart"};
+        String[] readNfdumpCommand = {"nfdump", "-r", nfdumppath + latestNfdumpFile.trim(), "-o", "fmt:%ts,%te,%td,%pr,%sa,%sp,%da,%dp,%pkt,%byt,%bps,%pps", "-O", "tstart"};
+        System.out.println(String.join("-", readNfdumpCommand));
+        String reading = obj.executeCommand(readNfdumpCommand);
+        System.out.println(reading);
+
         //String command ="nfdump -r /var/cache/nfdump/2018/03/12/nfcapd.201803121525 -O tstart";
         //in windows
         //String command = "ping -n 3 " + domainName;
-
-        String latestNfdumpFile = obj.executeCommand(getLatestNfdumpCommand);
-        System.out.println("Processing: " + latestNfdumpFile);
-        String reading = obj.executeCommand(readNfdumpCommand);
-        System.out.println(reading);
+        
+        
         FileWriter writer = null;
         try {
-            writer = new FileWriter("/home/aegis/test.csv");
+            writer = new FileWriter("/home/aegis/" + latestNfdumpFile.trim() + ".csv");
             writer.append(reading);
         } catch (Exception e) {
             System.out.println("Error writing csv file");
@@ -68,12 +82,9 @@ public class AegisNfdumpReader {
             while ((line = reader.readLine()) != null) {
                 output.append(line + "\n");
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return output.toString();
     }
-
 }
