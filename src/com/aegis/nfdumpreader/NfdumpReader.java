@@ -21,6 +21,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 /**
@@ -38,6 +41,14 @@ public class NfdumpReader {
     public static void main(String[] args) {
         NfdumpReader obj = new NfdumpReader();
         loadConfig();
+        try {
+            Path appDir = Files.createDirectories(Paths.get(System.getProperty("user.home")
+                    + "/NetFlowAgent/" + config.getProperty("nfdumpCsvPath")));
+            System.out.println("app Dir created: " + appDir);
+        } catch (IOException ex) {
+            LOGGER.error("Error creating the appication folder");
+            ex.printStackTrace();
+        }
 
         Date date = new Date();
         Calendar cal = Calendar.getInstance();
@@ -53,7 +64,8 @@ public class NfdumpReader {
         String[] getLatestNfdumpCommand = {"/bin/sh", "-c", "cd " + nfdumppath + "&& ls -t | head -n 1"};
         String latestNfdumpFile = obj.executeCommand(getLatestNfdumpCommand);
         System.out.println("Processing file: " + latestNfdumpFile);
-        String nfdumpCSV = config.getProperty("nfdumpCsvPath") + latestNfdumpFile.trim() + ".csv";
+        String nfdumpCSV = System.getProperty("user.home") + "/NetFlowAgent/"
+                + config.getProperty("nfdumpCsvPath") + latestNfdumpFile.trim() + ".csv";
 
         if (config.getProperty("latestReadNfumpCSV") == null
                 || (config.getProperty("latestReadNfumpCSV") != null
