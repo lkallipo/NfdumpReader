@@ -44,7 +44,7 @@ public class NfdumpReader {
         try {
             Path appDir = Files.createDirectories(Paths.get(System.getProperty("user.home")
                     + "/NetFlowAgent/" + config.getProperty("nfdumpCsvPath")));
-            System.out.println("app Dir created: " + appDir);
+           // System.out.println("app Dir created: " + appDir);
         } catch (IOException ex) {
             LOGGER.error("Error creating the appication folder");
             ex.printStackTrace();
@@ -60,10 +60,10 @@ public class NfdumpReader {
         String nfdumppath = config.getProperty("nfdumpBase") + year + "/" + String.format("%02d", month)
                 + "/" + String.format("%02d", day) + "/";
 
-        System.out.println("nfdumppath: " + nfdumppath);
+        //System.out.println("nfdumppath: " + nfdumppath);
         String[] getLatestNfdumpCommand = {"/bin/sh", "-c", "cd " + nfdumppath + "&& ls -t | head -n 1"};
         String latestNfdumpFile = obj.executeCommand(getLatestNfdumpCommand);
-        System.out.println("Processing file: " + latestNfdumpFile);
+       // System.out.println("Processing file: " + latestNfdumpFile);
         String nfdumpCSV = System.getProperty("user.home") + "/NetFlowAgent/"
                 + config.getProperty("nfdumpCsvPath") + latestNfdumpFile.trim() + ".csv";
 
@@ -74,16 +74,16 @@ public class NfdumpReader {
             // Read the file and create logs for the results
             String[] readNfdumpCommand = {"nfdump", "-r", nfdumppath + latestNfdumpFile.trim(), "-o", "fmt:%ts,%te,%td,%pr,%sa,%sp,%da,%dp,%pkt,%byt,%bps,%pps", "-O", "tstart"};
 
-            System.out.println("Command: " + String.join(" ", readNfdumpCommand));
+            //System.out.println("Command: " + String.join(" ", readNfdumpCommand));
             String reading = obj.executeCommand(readNfdumpCommand);
-            System.out.println(reading);
+            //System.out.println(reading);
 
             FileWriter writer = null;
             try {
                 writer = new FileWriter(nfdumpCSV);
                 writer.append(reading);
             } catch (Exception e) {
-                System.out.println("Error writing csv file");
+                //System.out.println("Error writing csv file");
                 LOGGER.error("Error writing csv file for " + latestNfdumpFile);
                 e.printStackTrace();
             } finally {
@@ -92,7 +92,7 @@ public class NfdumpReader {
                         writer.flush();
                         writer.close();
                     } catch (IOException e) {
-                        System.out.println("Error while flushing/closing fileWriter !!!");
+                        //System.out.println("Error while flushing/closing fileWriter !!!");
                         LOGGER.error("Error while flushing/closing fileWriter for the csv " + nfdumpCSV);
                         e.printStackTrace();
                     }
@@ -105,8 +105,9 @@ public class NfdumpReader {
 
             config.setProperty("latestReadNfumpCSV", nfdumpCSV);
             saveConfig();
+            System.out.println("Nfdump CSV file processed: " + nfdumpCSV);
         } else {
-            LOGGER.info("No reading executed, latest csv file allready processed: " + nfdumpCSV);
+            LOGGER.info("No reading executed, latest csv file allready processed: " + latestNfdumpFile.trim() + ".csv");
             System.out.println("No reading executed, latest csv file allready processed: " + nfdumpCSV);
         }
     }
@@ -164,9 +165,10 @@ public class NfdumpReader {
 
             String datetime = "";
             while ((line = reader.readNext()) != null && !finished) {
-                if (!line[0].contains("Summary")) {
-                    //Read flow's start datetime e.g. 2017-06-26 6:17:17
-                    datetime = line[0].substring(0, line[0].indexOf("."));
+                if (!line[0].contains("Summary") && !line[0].contains("No matched flows")) {
+                    //Read flow's start datetime e.g. 2017-06-26 6:17:17.122 with a minute granularity
+                   
+                    datetime = line[0].substring(0, line[0].indexOf(".")-3);
                     if (netvals.containsKey(datetime)) {
                         netvals.put(datetime, netvals.get(datetime) + 1);
                     } else {
@@ -188,7 +190,7 @@ public class NfdumpReader {
                     nseverity = "CRITICAL";
                 }
                 LOGGER.info(srcHost + "; Network Connections;" + nseverity + ";Network Connections " + nconns + " at " + pair.getKey().toString());
-                System.out.println(srcHost + "; Network Connections;" + nseverity + ";Network Connections " + nconns + " at " + pair.getKey().toString());
+                //System.out.println(srcHost + "; Network Connections;" + nseverity + ";Network Connections " + nconns + " at " + pair.getKey().toString());
             }
         } catch (IOException e) {
             LOGGER.error("Error trying to read network connections from " + nfdumpCSV);
@@ -218,15 +220,15 @@ public class NfdumpReader {
             double bps;
 
             while ((line = reader.readNext()) != null && !finished) {
-                if (!line[0].contains("Summary")) {
+                if (!line[0].contains("Summary") && !line[0].contains("No matched flows")) {
                     if (!line[10].contains("M")) {
                         bps = Double.parseDouble(line[10]);
                     } else {
                         bps = Double.parseDouble(line[10].substring(0, line[10].indexOf(" M"))) * 1000000;
                     }
 
-                    //Read flow's start datetime e.g. 2017-06-26 6:17:17
-                    datetime = line[0].substring(0, line[0].indexOf("."));
+                    //Read flow's start datetime e.g. 2017-06-26 6:17:17.122 with a minute granularity
+                    datetime = line[0].substring(0, line[0].indexOf(".") -3);
                     if (netvals.containsKey(datetime)) {
                         netvals.put(datetime, (netvals.get(datetime) + bps) / 2);
                     } else {
@@ -249,7 +251,7 @@ public class NfdumpReader {
                     nseverity = "CRITICAL";
                 }
                 LOGGER.info(srcHost + "; Network Speed;" + nseverity + ";Network Speed " + nspeed + " bits/sec at " + pair.getKey().toString());
-                System.out.println(srcHost + "; Network Speed;" + nseverity + ";Network Speed " + nspeed + " bits/sec at " + pair.getKey().toString());
+                //System.out.println(srcHost + "; Network Speed;" + nseverity + ";Network Speed " + nspeed + " bits/sec at " + pair.getKey().toString());
             }
         } catch (IOException e) {
             LOGGER.error("Error trying to read network speed from " + nfdumpCSV);
@@ -278,11 +280,11 @@ public class NfdumpReader {
             double pps;
 
             while ((line = reader.readNext()) != null && !finished) {
-                if (!line[0].contains("Summary")) {
+                if (!line[0].contains("Summary") && !line[0].contains("No matched flows")) {
                     pps = Double.parseDouble(line[11]);
 
-                    //Read flow's start datetime e.g. 2017-06-26 6:17:17
-                    datetime = line[0].substring(0, line[0].indexOf("."));
+                    //Read flow's start datetime e.g. 2017-06-26 6:17:17.122 with a minute granularity
+                    datetime = line[0].substring(0, line[0].indexOf(".") -3);
                     if (netvals.containsKey(datetime)) {
                         netvals.put(datetime, (netvals.get(datetime) + pps) / 2);
                     } else {
@@ -305,7 +307,7 @@ public class NfdumpReader {
                     nseverity = "CRITICAL";
                 }
                 LOGGER.info(srcHost + "; Network Load;" + nseverity + ";Network Load " + nload + " packets/sec at " + pair.getKey().toString());
-                System.out.println(srcHost + "; Network Load;" + nseverity + ";Network Load " + nload + " packets/sec at " + pair.getKey().toString());
+                //System.out.println(srcHost + "; Network Load;" + nseverity + ";Network Load " + nload + " packets/sec at " + pair.getKey().toString());
             }
         } catch (IOException e) {
             LOGGER.error("Error trying to read network load from " + nfdumpCSV);
