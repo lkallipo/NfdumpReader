@@ -1,3 +1,7 @@
 Manifest-Version: 1.0
-X-COMMENT: Main-Class will be added automatically by build
+Ant-Version: Apache Ant 1.9.7
+Created-By: 1.8.0_161-b12 (Oracle Corporation)
+Implementation-Title: AEGIS Netflow Agent
+Implementation-Version: 1.4.1 2018-10-06 10:25:19 EEST
+Implementation-URL: http://www.aegisresearch.eu
 

@@ -33,12 +33,20 @@ import java.util.Properties;
 public class NfdumpReader {
 
     final static Logger LOGGER = Logger.getLogger("NetFlowAgent");
-    private static Properties config;
+    private static Properties config;    
 
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) {        
+      
+        if(args.length > 0 && args[0].equals("-version")){
+           
+            System.out.println("\nVersion: " + NfdumpReader.class.getPackage().getImplementationVersion());          
+            System.out.println(NfdumpReader.class.getPackage().getImplementationTitle() + "\n\n");
+            return;
+        }
+        
         NfdumpReader obj = new NfdumpReader();
         loadConfig();
         try {
@@ -104,7 +112,7 @@ public class NfdumpReader {
             logNetworkLoad(config.getProperty("hostIp"), nfdumpCSV);
 
             config.setProperty("latestReadNfumpCSV", nfdumpCSV);
-            saveConfig();
+            saveConfig("config.properties",config);
             System.out.println("Nfdump CSV file processed: " + nfdumpCSV);
         } else {
             LOGGER.info("No reading executed, latest csv file allready processed: " + latestNfdumpFile.trim() + ".csv");
@@ -180,13 +188,17 @@ public class NfdumpReader {
             }
             int nconns;
             String nseverity = "";
+            
+            int nConnWarn = Integer.parseInt(config.getProperty("NetworkConnectionsWarning"));
+            int nConnCritical = Integer.parseInt(config.getProperty("NetworkConnectionsCritical"));
+            
             for (Map.Entry pair : netvals.entrySet()) {
                 nconns = (int) pair.getValue();
-                if (nconns <= 2) {
+                if (nconns < nConnWarn) {
                     nseverity = "OK";
-                } else if (nconns > 2 && nconns < 4) {
+                } else if (nconns < nConnCritical) {
                     nseverity = "WARNING";
-                } else {// nconns >4
+                } else {
                     nseverity = "CRITICAL";
                 }
                 LOGGER.info(srcHost + "; Network Connections;" + nseverity + ";Network Connections " + nconns + " at " + pair.getKey().toString());
@@ -240,13 +252,17 @@ public class NfdumpReader {
             }
             double nspeed;
             String nseverity = "";
+            
+            float nSpeedWarn = Float.parseFloat(config.getProperty("NetworkSpeedWarning"));
+            float nSpeedCritical = Float.parseFloat(config.getProperty("NetworkSpeedCritical"));
+            
             for (Map.Entry pair : netvals.entrySet()) {
                 nspeed = (double) pair.getValue();
-                if (nspeed > 2) {
+                if (nspeed > nSpeedWarn) {
                     nseverity = "OK";
-                } else if (nspeed > 1.71 && nspeed < 2) {
+                } else if (nspeed > nSpeedCritical) {
                     nseverity = "WARNING";
-                } else // nspeed < 2
+                } else 
                 {
                     nseverity = "CRITICAL";
                 }
@@ -296,11 +312,15 @@ public class NfdumpReader {
             }
             double nload;
             String nseverity = "";
+            
+            int nLoadWarn = Integer.parseInt(config.getProperty("NetworkLoadWarning"));
+            int nLoadCritical = Integer.parseInt(config.getProperty("NetworkLoadCritical")); 
+                    
             for (Map.Entry pair : netvals.entrySet()) {
                 nload = (double) pair.getValue();
-                if (nload <= 900) {
+                if (nload < nLoadWarn) {
                     nseverity = "OK";
-                } else if (nload > 900 && nload < 1500) {
+                } else if (nload < nLoadCritical) {
                     nseverity = "WARNING";
                 } else // nload >1500
                 {
@@ -340,13 +360,13 @@ public class NfdumpReader {
         }
     }
 
-    private static void saveConfig() {
+    private static void saveConfig(String configFileName,Properties propFile) {
 
-        String resourceName = System.getProperty("user.home") + "/NetFlowAgent/" + "config.properties";
+        String resourceName = System.getProperty("user.home") + "/NetFlowAgent/" + configFileName;
         FileOutputStream resourceOutStream = null;
         try {
             resourceOutStream = new FileOutputStream(resourceName);
-            config.store(resourceOutStream, null);
+            propFile.store(resourceOutStream, null);
         } catch (IOException ex) {
             LOGGER.fatal("Error saving config file");
         } finally {

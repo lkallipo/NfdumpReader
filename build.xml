@@ -71,19 +71,43 @@
 
     -->
     
-      <target name="package-for-store" depends="jar">
+    <target name="-pre-init">
+        <property name="project.name" value="AEGIS Netflow Agent" />
+        <property name="version.num" value="1.4.1" />
+        <tstamp>
+            <format property="NOW" pattern="yyyy-MM-dd HH:mm:ss z" />
+        </tstamp>
+
+        <manifest file="MANIFEST.MF">   
+            <attribute name="Implementation-Title" value="${project.name}" />
+            <attribute name="Implementation-Version" value="${version.num} ${NOW}" />
+            <attribute name="Implementation-URL" value="http://www.aegisresearch.eu" />
+        </manifest>
+ 
+    </target>
+    
+    
+    <!--  Target to creat a 'fat' jar including all required libs  -->
+    <target name="package-for-store" depends="jar">
 
         <!-- Change the value of this property to be the name of your JAR,
              minus the .jar extension. It should not have spaces.
              <property name="store.jar.name" value="MyJarName"/>
         -->
         <property name="store.jar.name" value="NfdumpReader"/>
+        
+        <property name="project.name" value="AEGIS Netflow Agent" />
+        <property name="version.num" value="1.4.1" />
+        <tstamp>
+            <format property="NOW" pattern="yyyy-MM-dd HH:mm:ss z" />
+        </tstamp>
 
 
         <!-- don't edit below this line -->
 
         <property name="store.dir" value="store"/>
         <property name="store.jar" value="${store.dir}/${store.jar.name}.jar"/>
+        
 
         <echo message="Packaging ${application.title} into a single JAR at ${store.jar}"/>
 
@@ -96,12 +120,15 @@
 
             <manifest>
                 <attribute name="Main-Class" value="${main.class}"/>
+                <attribute name="Implementation-Title" value="${project.name}" />
+                <attribute name="Implementation-Version" value="${version.num} ${NOW}" />
+                <attribute name="Implementation-URL" value="http://www.aegisresearch.eu" />
             </manifest>
         </jar>
 
         <zip destfile="${store.jar}">
             <zipfileset src="${store.dir}/temp_final.jar"
-            excludes="META-INF/*.SF, META-INF/*.DSA, META-INF/*.RSA"/>
+                        excludes="META-INF/*.SF, META-INF/*.DSA, META-INF/*.RSA"/>
         </zip>
 
         <delete file="${store.dir}/temp_final.jar"/>
